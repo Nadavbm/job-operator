@@ -116,7 +116,7 @@ spec:
       serviceAccountName: jobop
       containers:
         - name: jobop
-          image: nadavbm/jobop:v0.0.1
+          image: nadavbm/jobop:v0.0.2
           command:
             - /jobop
           imagePullPolicy: Always

@@ -70,8 +70,9 @@ func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	var cronJob batchv1.CronJob
 	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
-		r.Logger.Error("unable to fetch CronJob", zap.Error(err))
+		// r.Logger.Error("unable to fetch CronJob", zap.Error(err))
 		if errors.IsNotFound(err) {
+			r.Logger.Info("create cronjob", zap.String("namespace", req.Namespace))
 			cj := buildCronJob(req.Namespace, &job)
 			if err := r.Create(ctx, cj); err != nil {
 				r.Logger.Error("could not create cronjob")
@@ -97,6 +98,7 @@ func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 }
 
 func buildCronJob(ns string, jobSpecs *cronjobsv1.Job) *batchv1.CronJob {
+	controller := true
 	return &batchv1.CronJob{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CronJob",
@@ -105,6 +107,15 @@ func buildCronJob(ns string, jobSpecs *cronjobsv1.Job) *batchv1.CronJob {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "jobop",
 			Namespace: ns,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: jobSpecs.APIVersion,
+					Kind:       jobSpecs.Kind,
+					Name:       jobSpecs.Name,
+					UID:        jobSpecs.UID,
+					Controller: &controller,
+				},
+			},
 		},
 		Spec: batchv1.CronJobSpec{
 			Schedule:          jobSpecs.Spec.Schedule,
@@ -134,5 +145,6 @@ func buildCronJob(ns string, jobSpecs *cronjobsv1.Job) *batchv1.CronJob {
 func (r *JobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&cronjobsv1.Job{}).
+		Owns(&batchv1.CronJob{}).
 		Complete(r)
 }
