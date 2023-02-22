@@ -13,7 +13,7 @@ kubebuilder init --domain example.com --repo example.com/job
 
 create api:
 ```
-kubebuilder init --domain example.com --repo example.com/job
+kubebuilder create api --group cronjobs --version v1 --kind Job
 ```
 
 edit and generate crd:
